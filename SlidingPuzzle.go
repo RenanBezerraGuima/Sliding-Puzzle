@@ -205,13 +205,20 @@ func (p *Puzzle) calcularDistanciaManhattan() int {
 	return distancia
 }
 
+func (p *Puzzle) calcularHeuristica(tipoHeuristica string) int {
+	switch tipoHeuristica {
+	case "manhattan", "Manhattan", "H2", "h2":
+		return p.calcularDistanciaManhattan()
+	case "fora_posicao", "foraPosicao", "ForaPosicao", "H1", "h1":
+		return p.calcularQtdNosForaDePosicao()
+	default:
+		fmt.Printf("Heurística '%s' não reconhecida, utilizando Manhattan como padrão. \n", tipoHeuristica)
+		return p.calcularDistanciaManhattan()
+	}
+}
+
 func resolverAEstrela(puzzleInicial *Puzzle, heuristica string) (*No, int) {
 	if puzzleInicial.estaCompleto() {
-		return &No{p: puzzleInicial, pai: nil, profundidade: 0, movimento: ""}, 0
-	}
-
-	if heuristica != "calcularDistanciaManhattan" || heuristica != "calcularQtdNosForaDePosicao" {
-		fmt.Println("Heurística inexistente")
 		return &No{p: puzzleInicial, pai: nil, profundidade: 0, movimento: ""}, 0
 	}
 
@@ -221,9 +228,48 @@ func resolverAEstrela(puzzleInicial *Puzzle, heuristica string) (*No, int) {
 
 	for len(listaAberta) > 0 {
 		indiceMinimo := 0
-		menorF := listaAberta[0].profundidade + listaAberta[0].p.heuristica()
+		menorF := listaAberta[0].profundidade + listaAberta[0].p.calcularHeuristica(heuristica)
 
+		for i := 1; i < len(listaAberta); i++ {
+			f := listaAberta[i].profundidade + listaAberta[i].p.calcularHeuristica(heuristica)
+			if f < menorF {
+				menorF = f
+				indiceMinimo = i
+			}
+		}
+
+		noAtual := listaAberta[indiceMinimo]
+		listaAberta = append(listaAberta[:indiceMinimo], listaAberta[indiceMinimo+1:]...)
+		chaveAtual := noAtual.p.obterChave()
+
+		if visitados[chaveAtual] {
+			continue
+		}
+		visitados[chaveAtual] = true
+		nosExpandidos++
+
+		if noAtual.p.estaCompleto() {
+			return noAtual, nosExpandidos
+		}
+
+		movimentos := noAtual.p.obterMovimentosPossiveis()
+		for _, movimento := range movimentos {
+			novoPuzzle := noAtual.p.copiar()
+			novoPuzzle.executarMovimento(movimento)
+			chave := novoPuzzle.obterChave()
+
+			if !visitados[chave] {
+				novoNo := &No{
+					p:            novoPuzzle,
+					pai:          noAtual,
+					profundidade: noAtual.profundidade + 1,
+					movimento:    movimento,
+				}
+				listaAberta = append(listaAberta, novoNo)
+			}
+		}
 	}
+	return nil, nosExpandidos
 }
 
 func (p *Puzzle) imprimir() {
@@ -274,6 +320,8 @@ func executarSolucao(puzzle *Puzzle, caminho []string) {
 
 func main() {
 	var p Puzzle
+	var ph1 Puzzle
+	var ph2 Puzzle
 	fmt.Println("Estado Objetivo:")
 	p.inicializar()
 	p.imprimir()
@@ -285,8 +333,21 @@ func main() {
 	fmt.Printf("\nHeurística 1 (Quantidade de números fora de posição): %d\n", p.calcularQtdNosForaDePosicao())
 	fmt.Printf("Heurística 2 (Distância Manhattan dos números da sua posição objetivo): %d\n", p.calcularDistanciaManhattan())
 
-	// noObjetivo, nosExpandidos := resolverBuscaEmLargura(&p)
-	// fmt.Printf("Quantidade de nós expandidos pela busca em Largura: %d\n", nosExpandidos)
-	// fmt.Printf("Profundidade do nó (quantidade de movimentos): %d\n", noObjetivo.profundidade)
-	// executarSolucao(&p, reconstruirCaminho(noObjetivo))
+	ph1 = *p.copiar()
+	ph2 = *p.copiar()
+
+	noObjetivoBEL, nosExpandidosBEL := resolverBuscaEmLargura(&p)
+	fmt.Printf("Quantidade de nós expandidos pela busca em Largura: %d\n", nosExpandidosBEL)
+	fmt.Printf("Profundidade do nó (quantidade de movimentos): %d\n", noObjetivoBEL.profundidade)
+	executarSolucao(&p, reconstruirCaminho(noObjetivoBEL))
+
+	noObjetivoh1, nosExpandidosh1 := resolverAEstrela(&ph1, "h1")
+	fmt.Printf("Quantidade de nós expandidos pelo A* h1: %d\n", nosExpandidosh1)
+	fmt.Printf("Profundidade do nó (quantidade de movimentos): %d\n", noObjetivoh1.profundidade)
+	executarSolucao(&p, reconstruirCaminho(noObjetivoh1))
+
+	noObjetivoh2, nosExpandidosh2 := resolverAEstrela(&ph2, "h2")
+	fmt.Printf("Quantidade de nós expandidos pelo A* h2: %d\n", nosExpandidosh2)
+	fmt.Printf("Profundidade do nó (quantidade de movimentos): %d\n", noObjetivoh2.profundidade)
+	executarSolucao(&p, reconstruirCaminho(noObjetivoh2))
 }
