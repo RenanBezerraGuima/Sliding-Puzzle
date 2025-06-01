@@ -325,7 +325,7 @@ func main() {
 	fmt.Println("Estado Objetivo:")
 	p.inicializar()
 	p.imprimir()
-	movimentos := 120
+	movimentos := 200
 	fmt.Printf("Estado Inicial randomizado com %d movimentos aleátorios\ndo estado objetivo, garantido que este seja solúvel:\n", movimentos)
 	p.randomizar(movimentos)
 	p.imprimir()
@@ -337,17 +337,16 @@ func main() {
 	ph2 = *p.copiar()
 
 	noObjetivoBEL, nosExpandidosBEL := resolverBuscaEmLargura(&p)
-	fmt.Printf("Quantidade de nós expandidos pela busca em Largura: %d\n", nosExpandidosBEL)
-	fmt.Printf("Profundidade do nó (quantidade de movimentos): %d\n", noObjetivoBEL.profundidade)
-	executarSolucao(&p, reconstruirCaminho(noObjetivoBEL))
+	// executarSolucao(&p, reconstruirCaminho(noObjetivoBEL))
 
 	noObjetivoh1, nosExpandidosh1 := resolverAEstrela(&ph1, "h1")
-	fmt.Printf("Quantidade de nós expandidos pelo A* h1: %d\n", nosExpandidosh1)
-	fmt.Printf("Profundidade do nó (quantidade de movimentos): %d\n", noObjetivoh1.profundidade)
-	executarSolucao(&p, reconstruirCaminho(noObjetivoh1))
 
 	noObjetivoh2, nosExpandidosh2 := resolverAEstrela(&ph2, "h2")
+
+	fmt.Printf("Quantidade de nós expandidos pela busca em Largura: %d\n", nosExpandidosBEL)
+	fmt.Printf("Profundidade do nó (quantidade de movimentos) Busca Em Largura (Solução ótima): %d\n", noObjetivoBEL.profundidade)
+	fmt.Printf("Quantidade de nós expandidos pelo A* h1: %d\n", nosExpandidosh1)
+	fmt.Printf("Profundidade do nó (quantidade de movimentos) A* h1: %d\n", noObjetivoh1.profundidade)
 	fmt.Printf("Quantidade de nós expandidos pelo A* h2: %d\n", nosExpandidosh2)
-	fmt.Printf("Profundidade do nó (quantidade de movimentos): %d\n", noObjetivoh2.profundidade)
-	executarSolucao(&p, reconstruirCaminho(noObjetivoh2))
+	fmt.Printf("Profundidade do nó (quantidade de movimentos): A* h2 %d\n", noObjetivoh2.profundidade)
 }
